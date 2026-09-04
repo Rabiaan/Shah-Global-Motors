@@ -1,0 +1,7 @@
+# Prevent the PHP/cPanel backend from shipping to Vercel.
+# Vercel cannot run PHP; without this the .php source (incl. DB defaults and
+# admin fallback credentials) would be served as raw downloadable files.
+public/api/
+api-core/
+PLAN.md
+*.sql

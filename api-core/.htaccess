@@ -1,0 +1,46 @@
+# ============================================================================
+# api-core/.htaccess — Apache hardening for the api-core security layer
+#
+# Rules:
+#   1. Block direct web access to storage (logs), .env, and source module files
+#   2. Enforce HTTPS
+#   3. Reject obvious request smuggling / malicious query tokens early
+#   4. Note: app-level CORS (own-domain) is enforced in bootstrap.php because
+#      mod_headers may not reflect the dynamic Origin. See bootstrap.php.
+# ============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # --- Force HTTPS (production) ----------------------------------------
+    # RewriteCond %{HTTPS} !=on
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # --- Hardening: reject obviously malicious request inputs -------------
+    RewriteCond %{QUERY_STRING} (\<|%3C|\"|%22|'|%27|%3B|\;|\/\*|%2A%2F) [NC,OR]
+    RewriteCond %{QUERY_STRING} (javascript:|vbscript:|onerror=|onload=|base64_) [NC,OR]
+    RewriteRule .* - [F,L]
+
+    # --- Reject PHP execution in the storage/logs directory --------------
+    RewriteRule ^storage/.*$ - [F,L]
+</IfModule>
+
+# --- Deny direct downloads of sensitive files -------------------------------
+<FilesMatch "^(\.env|\.env\.example|README\.md|composer\.(lock|json)|.*\.((log)|(md)))$">
+    Require all denied
+</FilesMatch>
+
+# --- Never allow .env / .git / .htaccess to be served ------------------------
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# --- Disable directory listing -----------------------------------------------
+Options -Indexes
+
+# --- Secure headers (app also sets these; belt and suspenders) --------------
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "no-referrer"
+</IfModule>

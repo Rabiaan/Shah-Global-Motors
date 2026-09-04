@@ -16,3 +16,5 @@ public/assets/aistudio/
 *.swp
 *.swo
 metadata.json
+api-core/storage/
+api-core/deploy/
